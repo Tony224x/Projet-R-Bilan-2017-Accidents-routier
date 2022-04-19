@@ -1,0 +1,362 @@
+---
+title: "Rapport sur le Bilan 2017 de l'Observatoire National Interministériel de la Sécurité Routière"
+author: "Anthony VON BIELER </br> Youssouf ZAHER"
+date: "18/04/2022"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+    
+---
+
+
+
+```{r logo, echo=FALSE}
+htmltools::img(src = knitr::image_uri(file.path("C:/Users/Tony PC/Pictures/mba_logo.png")), 
+               alt = 'mba_logo', 
+               style = 'position:absolute; top:0%; right:0%; padding:10px;',
+               width = "150px",
+               heigth = "200px"
+)
+
+
+```
+
+```{r setup, include=FALSE, warning=FALSE, echo = FALSE}
+## Global options
+knitr::opts_chunk$set(cache = FALSE, message = FALSE)
+```
+
+
+```{r chargement, echo=FALSE, warning=FALSE}
+load("C:/Users/Tony PC/Desktop/COURS MBA BDIA1/r programmation/Projet_R_MBDIA_2021_S2/Donnees_Projet_Sécurité_Routière.Rdata")
+library(plotly)
+library(rAmCharts)
+library(rnaturalearth)
+library(mapview)
+```
+
+
+# Introduction
+
+Notre rapport consiste à apporter une analyse sur les accidents de la circulation routière en France en 2017.  
+Nous développerons notre analyse à travers une examination des **caractéristiques**. Ensuite, nous étudierons la **temporalité** de ces accidents. Pour finir avec une autopsie de leurs **géographies**. 
+
+
+--------------
+
+
+# I. Analyse par caractéristiques
+
+
+## 1) Répartition par âge des accidentés
+
+On constate un pic des accidentés entre 20 et 40 ans. Nous pouvons interpréter cela par le manque d'expérience, 
+avec qui la jeunesse est synonyme.  
+On peut rajouter à cela le fait que les jeunes prennent plus de risques et
+ont tendance à consommer aussi plus d'alcool sans prendre en considération des risques au volant.
+
+```{r rep_age, echo=FALSE, warning=FALSE}
+fig_age <- plot_ly(usagers, x = ~age,marker = list(color = "#b833ff")) %>%
+  layout(title ="",
+         plot_bgcolor='#e5ecf6',
+         xaxis = list(title ="Âge",
+                      zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'),
+         yaxis = list(title = "Nombre d'accidentés",
+                      zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'))
+
+fig_age
+```
+
+
+Ce graphique nous confirme la grande part des 25-40 ans chez les accidentés. En effet
+elle ne représente qu'une période de 15 années alors qu'elle possède environ la même
+proportions que celle des 40-65 ans qui elle représente une période de 25 ans.
+
+```{r rep_age_pie, echo=FALSE, warning=FALSE}
+fig_classe_age <- plot_ly(usagers, labels = ~groupe_age, type = 'pie') %>%
+  layout(title ="Répartition par groupe d'âge des accidentés")
+
+fig_classe_age
+```
+
+
+
+## 2) Répartition par sexe des accidentés
+
+
+
+### a) Âge moyen/médian selon le sexe 
+
+On peut voir que les femmes ont tendance à avoir des accidents légèrement plus
+âgés que les hommes.  
+On peut expliquer cela par le fait que selon l'INSEE les hommes
+ont tendance à avoir le permis plus tôt que les femmes et ainsi être plus nombreux
+dans la période où leurs risques d'accident est le plus élevé.
+
+```{r rep_sexe_age_moyen, echo=FALSE, warning=FALSE}
+fig111 <- plot_ly(age_moyen_median, x = ~sexe,
+                y= ~age_moyen, type = 'bar', name='Age Moyen')
+fig222 <- plot_ly(age_moyen_median, x = ~sexe,
+                y= ~age_median, type = 'bar',name='Age Median')
+fig6 <- subplot(fig111, fig222, shareY = TRUE)
+fig6 <- fig6 %>% layout(title = "Age moyen et médian par sexe des accidentés",
+                      plot_bgcolor='#e5ecf6',
+                      xaxis = list(title ="Sexe ( 1 = Homme , 2 = Femme )",
+                                   zerolinecolor = '#ffff',
+                                   zerolinewidth = 2,
+                                   gridcolor = 'ffff'),
+                      yaxis = list(title = "Age",
+                                   zerolinecolor = '#ffff',
+                                   zerolinewidth = 2,
+                                   gridcolor = 'ffff'))
+fig6  
+```
+
+### b) Répartition selon le sexe
+
+On remarque qu'on a deux fois plus d'hommes impliqués dans des accidents que de femmes avec environ 68 % contre 32 %.  
+On pourrait mettre en lien cette observation avec la différence de consommation d'alcool les hommes étant 3 fois plus nombreux (15 %) que les femmes (5 %) à consommer de l'alcool tous les jours et ceci en plus grande quantité selon alcool-info-service.  
+Des études de l’Ifsttar ont aussi démontré que les hommes ont plus de comportements extrême que les femmes et ces comportements se reflètent aussi au volant.
+
+
+```{r repartion_sexe, echo=FALSE, warning=FALSE}
+amPie(data
+      = r_sexe, inner_radius = 45, 
+      depth = 15, show_values = TRUE) %>%
+  amOptions(legend = TRUE, main = "Nombre de personnes impliquées par sexe  
+            lors d'un accident",
+            mainColor = "#4814ed", mainSize = 15, creditsPosition = "bottom-right")
+```
+
+
+
+## 3) Nombre de personnes impliquées par accidents
+
+Nous pouvons constater que dans la grande majorité des accidents, il y a moins de 15 personnes impliquées.  
+Au-dessus, les accidents sont très rares et peuvent être traités comme des outliers à étudier au cas par cas. 
+
+
+```{r Nombre_personnes_impliquées_par_accident, echo=FALSE, warning=FALSE}
+fig2 <- plot_ly(Nbre_accident, x = ~Num_Acc, y = ~n, type = 'scatter', mode = 'markers',
+               marker = list(size = ~n, opacity = 0.5))%>% 
+  layout(title = "",
+                      xaxis = list(title= "Id accident"),
+                      yaxis = list(title= "Nombre d'accidentés"))
+
+fig2
+```
+
+--------------------------------
+
+
+# II. Analyse temporelle
+
+
+
+## 1) Évolution de nombre d'accidents en 2017
+
+Le graphique ci-dessous montre l'évolution du nombre d'accidents en 2017 et on peut constater une diminution dans la période hivernale.
+
+```{r evol_nb_accident_2017, echo=FALSE, warning=FALSE}
+amTimeSeries(mois_accident, 'mois', c('n'), bullet = 'round',
+             linewidth = c(3, 1), main = "Evolution de nombre d'accident en 2017")
+
+
+```
+
+
+```{r rep_semaine_2017, echo=FALSE, warning=FALSE}
+fig_rep_semaine <- plot_ly(rep_semaine, x = ~semaine,y=~n,
+                           type='bar',marker = list(color = "#b833ff")) %>%
+  layout(title ="Répartition par semaine des accidents",
+         plot_bgcolor='#e5ecf6',
+         xaxis = list(title ="Semaine",
+                      zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'),
+         yaxis = list(title = "Nombre d'accidentés",
+                      zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'))
+
+fig_rep_semaine
+```
+
+
+
+## 2) Répartition des accidents par jours de la semaine
+
+Ce graphique nous présente que le vendredi est le jour où l'on observe le plus
+d'accident et le dimanche le moins.  
+On peut interpréter cela par le fait que le
+trafic est moins intense le dimanche alors que vendredi, il l'est nettement plus.  
+On pourrait rajouter aussi le fait que le vendredi commence le
+week-end ainsi de nombreuses personnes vont en soirée et souvent
+consomme de l'alcool et ont plus tendance à s'exposer
+au risque d'un accident.
+
+```{r rep_jour_semaine, echo=FALSE, warning=FALSE}
+amBarplot(x="weekdays(date_acc)",y="n",data= rep_jour_semaine,
+          depth = 15,
+          horiz = TRUE, main='Répartition par jour des accidents')
+```
+
+## 3) Analyse par classe d'heures des accidents 
+
+### a) Répartition du nombre d'accidents par classe d'heures
+
+On observe que la répartition des accidents est corrélée semble t-il au trafic routier, du fait que les périodes d'heures où il y beaucoup de circulation,
+comme l'après-midi et en soirée, correspondent aux heures où il y a
+beaucoup d'accidents. De même l'inverse s'applique à la nuit.
+
+```{r repartion_classe_heure, echo=FALSE, warning=FALSE}
+fig_donut_heure <- carac_classe_heure_group %>%
+  plot_ly(labels = ~classe_heure, values= ~n) %>%
+  add_pie(hole=0.5) %>%
+  layout(title="Répartition des accidents par classe d'heures")
+
+fig_donut_heure
+```
+
+
+
+### b) Nombre d'accidentés par typologie et par classe d'heures
+
+On constate dans un premier temps que les accidents se produisent en majorité l'après-midi et beaucoup moins la nuit. 
+Cela
+nous met en évidence que le trafic est un facteur important, car l'après-midi représente le moment où il y a le plus de circulation
+et la nuit le moment où il y en a le moins.
+
+
+Dans un second temps, on observe que la proportion de personne indemne diminue fortement passant de 43,2%
+en après-midi à 30,7 %, la nuit. La mortalité, elle, bondit de 2,2 % à 5,3 %, soit une mortalité 2 fois plus élevée.
+
+
+On pourrait donner comme cause la plus faible luminosité la nuit, la fatigue des usagers ou certainement
+l'alcool et drogues plus consommés de nuit.
+
+```{r typologie_classe_heure, echo=FALSE, warning=FALSE}
+fig14 <- plot_ly(classe, x = ~classe_heure, y = ~Blessé_hospitalisé, type = 'bar', 
+               name = 'Blessé hospitalisé')%>% 
+  add_trace(y = ~Blessé_léger, name = 'Blessé léger')%>%
+  add_trace(y = ~Indemne, name = 'Indemne')%>% 
+  add_trace(y = ~Tué, name = 'Tué')%>% 
+  layout(title = "",
+                     plot_bgcolor='#e5ecf6',
+                     xaxis = list(title = "",
+                                  zerolinecolor = '#08ff00', 
+                                  zerolinewidth = 2, 
+                                  gridcolor = 'ffff',
+                                  tickangle = -45),
+                     yaxis = list(title = "Nombre d'accidentés",
+                                  zerolinecolor = '#ffff', 
+                                  zerolinewidth = 2, 
+                                  gridcolor = 'ffff'))
+fig14
+```
+
+-------------------------
+
+
+# III. Analyse géographique
+
+
+
+## 1) Analyse par département
+
+### a) Nombre d'accidents par département
+
+On peut observer que ce sont les départements ayant les plus fortes populations et les taux d'urbanisation les plus élevés qui
+font le plus d'accidents. 
+Comme avec Paris ou les Bouches du Rhône, où là les accidents sont très élevé de même que leur
+population.
+
+```{r Nombre_accident_departement, echo=FALSE, warning=FALSE}
+fig8 <-  plot_ly(x = dep_name$departmentName, y = dep_name$nb, type = 'bar',
+                marker = list(color = "#b833ff"))%>%
+  layout(title = "Nombre d'accidentés par Département",
+         plot_bgcolor='#e5ecf6', 
+         xaxis = list( 
+           zerolinecolor = '#ffff', 
+           zerolinewidth = 2, 
+           gridcolor = 'ffff',
+           tickangle = -45), 
+         yaxis = list(title= "Nombre d'accidentés", 
+           zerolinecolor = '#ffff', 
+           zerolinewidth = 2, 
+           gridcolor = 'ffff'))
+fig8
+```
+
+
+
+```{r map_dep, echo=FALSE, warning=FALSE}
+mapview(data_dep, zcol = "nb_accident",legend = TRUE)
+```
+
+
+
+### b) Typologie par département
+
+Ce graphique nous montre qu'à Paris la proportion de blessé hospitalisé et tué est beaucoup moins forte que dans les autres
+départements. En observant les autres départements, on constate un lien entre niveaux d'urbanisation et gravité des accidents.  
+En effet, plus d'urbanisation signifie limitation de vitesse plus stricte car étant en ville, donc il y a bien un corrélation négative entre taux d'urbanisation 
+et gravité des accidents.  
+Un département comme la Moselle où il y a 4,5 % de morts est beaucoup plus rurale qu'un département
+comme les Bouches-du-Rhône, avec Marseille, où là la mortalité diminue à 1,4 % et encore plus qu'à
+Paris où ce pourcentage tombe à 0.3%.
+
+```{r typologie_departement, echo=FALSE, warning=FALSE}
+fig_type  <- plot_ly(dep_blesse, x = ~departmentName, y = ~Indemne,
+                     type = 'bar', name = 'Indemne') %>%
+  add_trace(y = ~Blessé_léger, name = 'Blessé léger') %>% 
+  add_trace(y = ~Blessé_hospitalisé,name = 'Blessé hospitalisé')%>%
+  add_trace(y = ~Tué, name = 'Tué') %>% 
+  layout(barmode='stack',
+         plot_bgcolor='#e5ecf6',
+         title = "Typologie de l'état des accidentés par département",
+         xaxis = list(title ="",
+                      zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff',
+                      tickangle = -45),
+         yaxis = list(title = "Nombre d'accidentés",
+                      zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'))
+
+fig_type
+```
+
+
+
+## 2) Nombre d'accidents par région
+
+Le constat fait par département est encore plus frappant en examinant
+les régions. On constate que l'Île-de-France à un nombre
+très important d'accident relativement aux autres régions du fait notamment
+encore de sa population.
+
+```{r nombre_accident_région, echo=FALSE, warning=FALSE}
+fig9 <-  plot_ly(x = region_name$regionName, y = region_name$nb, type = 'bar',
+                marker = list(color = "#b833ff")) %>%
+  layout(title = "Nombre d'accidentés par région",
+         plot_bgcolor='#e5ecf6', 
+         xaxis = list( 
+           zerolinecolor = '#08ff00', 
+           zerolinewidth = 2, 
+           gridcolor = 'ffff',
+           tickangle = -45), 
+         yaxis = list(title= "Nombre de'accidentés", 
+           zerolinecolor = '#ffff', 
+           zerolinewidth = 2, 
+           gridcolor = 'ffff'))
+
+fig9
+```
+
+
